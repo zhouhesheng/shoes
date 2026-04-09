@@ -219,7 +219,7 @@ impl TuicConnectionManager {
     fn pick_port(&self) -> u16 {
         match &self.port_hop {
             Some(config) => {
-                use rand::RngCore;
+                use rand::Rng;
                 let mut rng = rand::rng();
                 let idx = (rng.next_u32() as usize) % config.ports.len();
                 config.ports[idx]
@@ -229,9 +229,9 @@ impl TuicConnectionManager {
     }
 
     /// Create a new QUIC endpoint with a fresh UDP socket.
-    fn create_endpoint(&self) -> std::io::Result<quinn::Endpoint> {
+    fn create_endpoint(&self, is_ipv6: bool) -> std::io::Result<quinn::Endpoint> {
         let udp_socket =
-            new_udp_socket(self.is_ipv6, self.bind_interface.clone())?;
+            new_udp_socket(is_ipv6, self.bind_interface.clone())?;
         let udp_socket = udp_socket.into_std().map_err(|e| {
             std::io::Error::other(format!("Failed to convert UDP socket: {e}"))
         })?;
@@ -335,6 +335,9 @@ impl TuicConnectionManager {
         let base_addr =
             resolve_single_address(&self.resolver, &self.server_address).await?;
 
+        // Determine IPv6 from the resolved address, not the config hostname
+        let is_ipv6 = base_addr.is_ipv6();
+
         let domain = match &self.sni_hostname {
             Some(s) => s.as_str(),
             None => self
@@ -351,7 +354,7 @@ impl TuicConnectionManager {
             let hop_socket = Arc::new(crate::udp_hop_socket::UdpHopSocket::new(
                 base_addr.ip(),
                 &hop_config.ports,
-                self.is_ipv6,
+                is_ipv6,
                 self.bind_interface.clone(),
             )?);
 
@@ -372,7 +375,7 @@ impl TuicConnectionManager {
             // No port hopping: use a plain endpoint
             let port = self.server_address.port();
             let server_addr = SocketAddr::new(base_addr.ip(), port);
-            let endpoint = self.create_endpoint()?;
+            let endpoint = self.create_endpoint(is_ipv6)?;
             (endpoint, server_addr, None)
         };
 

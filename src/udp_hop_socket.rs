@@ -15,7 +15,7 @@ use std::time::Duration;
 
 use log::{debug, info, warn};
 use quinn_udp::{RecvMeta, Transmit, UdpSocketState};
-use rand::Rng;
+use rand::RngExt;
 
 use crate::socket_util::new_udp_socket;
 
