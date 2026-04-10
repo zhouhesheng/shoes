@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use rustc_hash::FxHashMap;
 
+#[cfg(feature = "server")]
 use crate::anytls::{AnyTlsServerHandler, PaddingFactory};
 use crate::client_proxy_selector::ClientProxySelector;
 use crate::config::{ClientChainHop, ClientConfig};
@@ -244,32 +245,40 @@ pub fn create_tcp_server_handler(
             udp_enabled,
             fallback,
         } => {
-            let users: Vec<(String, String)> = users
-                .into_vec()
-                .into_iter()
-                .map(|u| (u.name, u.password))
-                .collect();
+            #[cfg(feature = "server")]
+            {
+                let users: Vec<(String, String)> = users
+                    .into_vec()
+                    .into_iter()
+                    .map(|u| (u.name, u.password))
+                    .collect();
 
-            let padding = if let Some(scheme_lines) = padding_scheme {
-                let scheme_str = scheme_lines.join("\n");
-                Arc::new(
-                    PaddingFactory::new(scheme_str.as_bytes())
-                        .expect("Invalid padding scheme (should be validated during config load)"),
-                )
-            } else {
-                PaddingFactory::default_factory()
-            };
+                let padding = if let Some(scheme_lines) = padding_scheme {
+                    let scheme_str = scheme_lines.join("\n");
+                    Arc::new(
+                        PaddingFactory::new(scheme_str.as_bytes())
+                            .expect("Invalid padding scheme (should be validated during config load)"),
+                    )
+                } else {
+                    PaddingFactory::default_factory()
+                };
 
-            // AnyTLS spawns its own task and returns AlreadyHandled, so it needs the proxy
-            // provider directly (it won't inherit from outer handler through TcpForward)
-            Box::new(AnyTlsServerHandler::new(
-                users,
-                padding,
-                resolver.clone(),
-                Arc::clone(client_proxy_selector),
-                udp_enabled,
-                fallback,
-            ))
+                // AnyTLS spawns its own task and returns AlreadyHandled, so it needs the proxy
+                // provider directly (it won't inherit from outer handler through TcpForward)
+                Box::new(AnyTlsServerHandler::new(
+                    users,
+                    padding,
+                    resolver.clone(),
+                    Arc::clone(client_proxy_selector),
+                    udp_enabled,
+                    fallback,
+                ))
+            }
+            #[cfg(not(feature = "server"))]
+            {
+                let _ = (users, padding_scheme, udp_enabled, fallback);
+                panic!("AnyTLS server is not included in this build (requires 'server' feature)")
+            }
         }
         ServerProxyConfig::Naiveproxy { .. } => {
             // This should be caught at config validation time

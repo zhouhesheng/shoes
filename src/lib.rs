@@ -68,11 +68,13 @@ pub mod dns;
 mod h2mux;
 mod http_handler;
 mod hysteria2_client;
+#[cfg(feature = "server")]
 mod hysteria2_server;
 mod mixed_handler;
 mod naiveproxy;
 mod option_util;
 mod port_forward_handler;
+#[cfg(feature = "server")]
 mod quic_server;
 mod quic_stream;
 mod reality;
@@ -96,6 +98,7 @@ mod tls_client_handler;
 mod tls_server_handler;
 mod trojan_handler;
 mod tuic_client;
+#[cfg(feature = "server")]
 mod tuic_server;
 mod udp_hop_socket;
 mod uot;

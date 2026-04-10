@@ -99,7 +99,7 @@ if [ "$FILTER" != "simulator" ]; then
     echo "=========================================="
     echo "Building for iOS Device ($TARGET_DEVICE)"
     echo "=========================================="
-    cargo build --lib --target "$TARGET_DEVICE" $CARGO_FLAGS
+    cargo build --lib --target "$TARGET_DEVICE" --no-default-features $CARGO_FLAGS
 
     DEVICE_LIB="target/$TARGET_DEVICE/$BUILD_TYPE/$LIB_NAME"
     if [ ! -f "$DEVICE_LIB" ]; then
@@ -116,7 +116,7 @@ if [ "$FILTER" != "device" ]; then
     echo "=========================================="
     echo "Building for iOS Simulator ($TARGET_SIM)"
     echo "=========================================="
-    cargo build --lib --target "$TARGET_SIM" $CARGO_FLAGS
+    cargo build --lib --target "$TARGET_SIM" --no-default-features $CARGO_FLAGS
 
     SIM_LIB="target/$TARGET_SIM/$BUILD_TYPE/$LIB_NAME"
     if [ ! -f "$SIM_LIB" ]; then

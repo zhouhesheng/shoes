@@ -18,6 +18,7 @@ use crate::client_proxy_selector::{ClientProxySelector, ConnectDecision};
 use crate::config::{BindLocation, Config, ConfigSelection, ServerConfig, TcpConfig, Transport};
 use crate::copy_bidirectional::copy_bidirectional;
 use crate::copy_bidirectional_message::copy_bidirectional_message;
+#[cfg(feature = "server")]
 use crate::quic_server::start_quic_servers;
 use crate::resolver::Resolver;
 use crate::routing::{ServerStream, run_udp_routing};
@@ -380,17 +381,24 @@ async fn start_tcp_or_quic_servers(
                 return Err(e);
             }
         },
-        Transport::Quic => match start_quic_servers(config.clone(), resolver).await {
-            Ok(handles) => {
-                join_handles.extend(handles);
-            }
-            Err(e) => {
-                for join_handle in join_handles {
-                    join_handle.abort();
+        Transport::Quic => {
+            #[cfg(feature = "server")]
+            match start_quic_servers(config.clone(), resolver).await {
+                Ok(handles) => {
+                    join_handles.extend(handles);
                 }
-                return Err(e);
+                Err(e) => {
+                    for join_handle in join_handles {
+                        join_handle.abort();
+                    }
+                    return Err(e);
+                }
             }
-        },
+            #[cfg(not(feature = "server"))]
+            return Err(std::io::Error::other(
+                "QUIC server support is not included in this build (requires 'server' feature)",
+            ));
+        }
         Transport::Udp => todo!(),
     }
 

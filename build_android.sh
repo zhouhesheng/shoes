@@ -117,7 +117,7 @@ for TARGET in $ALL_TARGETS; do
     export "CARGO_TARGET_${TARGET_UPPER}_LINKER=$CC"
 
     # Build
-    cargo build --lib --target "$TARGET" $CARGO_FLAGS
+    cargo build --lib --target "$TARGET" --no-default-features $CARGO_FLAGS
 
     # Copy output
     OUT_ABI_DIR="$OUTPUT_DIR/$ABI"

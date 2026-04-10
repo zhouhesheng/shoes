@@ -22,8 +22,9 @@ name = "shoes"
 path = "src/main.rs"
 
 [features]
-default = []
+default = ["server"]
 ffi = []  # Enable FFI module for non-Android builds
+server = []  # Include server modules (tuic_server, hysteria2_server, quic_server, anytls_server)
 
 [dependencies]
 async-trait = "*"
@@ -101,7 +102,7 @@ tikv-jemalloc-ctl = { version = "*", features = ["stats"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 android_logger = "*"
-jni = "*"
+jni = "0.21"
 ndk-sys = "*"
 
 [profile.release]
